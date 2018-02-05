@@ -1,6 +1,6 @@
 /*
- *  V4L2 video capture example
- *  process_imageの部分に保存ルーチンを追加しましょう
+yuv形式でカメラから画像を取得し保存する
+USAGE : capture [output_file]
  */
 
 #include <stdio.h>
@@ -26,7 +26,7 @@
 #define IMG_HEIGHT 	240
 
 struct buffer {
-	void 	*start;
+	void 		*start;
 	size_t   	length;
 };
 
@@ -45,16 +45,16 @@ static void errno_exit(const char *s)
 static int xioctl(int fd, int request, void * arg)
 {
 	int r;
-	
+
 	do {
 		r = ioctl(fd, request, arg);
 	} while (-1 == r && EINTR == errno);
 	return r;
 }
 
-static void process_image(const void *p)	
+static void process_image(const void *p)
 {
-	
+
 	//アドレスpにYUVのイメージ画像が入っているので
 	//ファイルに書き込めばよい
 	//ファイルオープン、書き込み、ファイルクローズ
@@ -77,7 +77,7 @@ static int read_frame(void)
 	buf.memory    = V4L2_MEMORY_MMAP;
 	// outgoing queue から1フレーム分のバッファを取り出す
 	if (xioctl(fd, VIDIOC_DQBUF, &buf) == -1) {
-		switch (errno) {	
+		switch (errno) {
 			case EAGAIN:		// outgoing queueが空のとき
 				return 0;
 			default:
@@ -186,7 +186,7 @@ static void init_mmap(void)
 		xioctl(fd, VIDIOC_QUERYBUF, &buf);
 
 		buffers[n_buffers].length = buf.length;
-		//　デバイスメモリとアプリケーションのメモリをマッピング（共有）			
+		//　デバイスメモリとアプリケーションのメモリをマッピング（共有）
 		buffers[n_buffers].start = mmap(NULL,	// start anywhere
 			buf.length,							// バッファの長さ
 			PROT_READ | PROT_WRITE,				// メモリ保護を指定
@@ -194,7 +194,7 @@ static void init_mmap(void)
 			fd, buf.m.offset);					// ファイルハンドラ、オフセット
 	}
 }
-	
+
 static void init_device(void)
 {
 	struct v4l2_format fmt;
@@ -209,17 +209,17 @@ static void init_device(void)
 
 	init_mmap();	// メモリマッピングの初期化
 }
-	
+
 static void close_device(void)
 {
 	close(fd);
 }
-	
+
 static void open_device(void)
 {
 	fd = open(dev_name, O_RDWR | O_NONBLOCK, 0);
 }
-	
+
 int main(int argc, char *argv[])
 {
 	if( argc != 2 ) {

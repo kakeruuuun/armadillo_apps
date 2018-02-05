@@ -1,3 +1,7 @@
+/*
+ツイッターから取得した文章をテキストファイルとして転送
+*/
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdio.h>
@@ -17,8 +21,8 @@ int main(void)
         sockfd = socket(AF_INET,SOCK_STREAM,0);
 
         address.sin_family = AF_INET;
-        address.sin_addr.s_addr = inet_addr("10.1.69.83");
-        address.sin_port = 9734;
+        address.sin_addr.s_addr = inet_addr("10.1.69.83");  //転送先IPアドレス
+        address.sin_port = 9734;                            //ポートの指定
 
         len = sizeof(address);
         result = connect(sockfd, (struct sockaddr *)&address, len);
@@ -28,7 +32,7 @@ int main(void)
                 exit(1);
         }
 
-        if(!(read_fp = fopen("./RevisionDM.txt","rb") ))
+        if(!(read_fp = fopen("./RevisionDM.txt","rb") ))    //ファイル名
                 return;
         fread(buf,sizeof(buf),1,read_fp);
 
@@ -37,6 +41,5 @@ int main(void)
         write(sockfd,buf,sizeof(buf));
         fclose(read_fp);
         close(sockfd);
-        printf("%s",buf);       //for test
         exit(0);
 }

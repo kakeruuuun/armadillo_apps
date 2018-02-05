@@ -1,3 +1,8 @@
+/*
+Twitterの文章をソケットで受け取る
+その後、その内容によってIRを操作する
+*/
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -33,8 +38,6 @@
 
 #define BUF_LEN 256
 
-int fd;
-int ret;
 
 int gpio_set(int s_pin, int mode)
 {
@@ -149,6 +152,8 @@ void sendModulatedData(int modulationTime)
 {
     int i;
     struct timespec time1;
+    int fd;
+    fd = open("/sys/class/gpio/CON9_11/value", O_WRONLY);
     time1.tv_sec = 0;
     time1.tv_nsec = 500;
 
@@ -222,7 +227,6 @@ int ir_send(int rm, int obj, int stat)
     }
 
     gpio_set(11, OUT);
-    fd = open("/sys/class/gpio/CON9_11/value", O_WRONLY);
 
     //solve file Length
     while (fgets(buf, BUF_LEN, fp) != NULL)

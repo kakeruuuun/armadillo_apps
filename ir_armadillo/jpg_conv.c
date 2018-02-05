@@ -1,3 +1,8 @@
+/*
+yuv形式の画像をjpg形式に変換する
+USAGE : jpg_conv [input_file] [output_file]
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <jpeglib.h>

@@ -1,5 +1,6 @@
 /*
- * fbdisp_jpeg.c 
+jpeg画像をディスプレイ（フレームバッファ）に表示する
+USAGE : jpeg_fbdisp [input_file]
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,7 +59,7 @@ int main(int argc, char *argv[])
 		img[i] = (JSAMPROW)calloc( sizeof( JSAMPLE ), 3 * width );
 	}
 
-	// 全イメージデータを取得	
+	// 全イメージデータを取得
 	while( cinfo.output_scanline < cinfo.output_height ) {
 		jpeg_read_scanlines( &cinfo,
 			img + cinfo.output_scanline,
@@ -88,7 +89,7 @@ int main(int argc, char *argv[])
 	unsigned short tcolor ;
 
 	unsigned char RGB[3];
- 
+
 	int x, y, max;
 	char type[5];
 
@@ -131,7 +132,7 @@ int main(int argc, char *argv[])
 
 	x1 = (xres - width)/2;
 	y1 = (yres - height)/2;
-	
+
 int f_line=0;
 	for(j=0; j<yres; j++) {
 		p=img[f_line];	//１行分の画像データをポインタｐに
