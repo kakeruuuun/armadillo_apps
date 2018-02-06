@@ -1,7 +1,8 @@
 /*
 jpeg画像をディスプレイ（フレームバッファ）に表示する
 USAGE : jpeg_fbdisp [input_file]
- */
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -13,11 +14,11 @@ USAGE : jpeg_fbdisp [input_file]
 #define DEVICE_NAME "/dev/fb0"
 #define DIV_BYTE 8
 
-#define COLOR_RED	0xf800
-#define COLOR_GREEN	0x07e0
-#define COLOR_BLUE	0x001f
-#define COLOR_WHITE	0xffff
-#define COLOR_BLACK	0x0000
+#define COLOR_RED		0xf800
+#define COLOR_GREEN		0x07e0
+#define COLOR_BLUE		0x001f
+#define COLOR_WHITE		0xffff
+#define COLOR_BLACK		0x0000
 #define COLOR_YELLOW	0xffe0
 
 /* function prototype */

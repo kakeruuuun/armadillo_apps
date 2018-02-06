@@ -5,7 +5,6 @@
 ./capture ./jpg_conv を必要とする。
 */
 
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdio.h>
@@ -20,30 +19,36 @@
 #include <netdb.h>
 #include <string.h>
 
+void gpio_init(void);
 int edge_capture(void);
+int send_image(void);
 
 int main(void)
 {
     while (1)
     {
+        gpio_init();
         edge_capture();
         send_image();
     }
     return 0;
 }
 
+void gpio_init(void)
+{
+    int fd;
+    fd = open("/sys/class/gpio/CON9_1/direction", O_RDWR);
+    write(fd, "in", 2);
+    close(fd);
+    fd = open("/sys/class/gpio/CON9_1/edge", O_RDWR);
+    write(fd, "rising", 7);
+    close(fd);
+}
+
 int edge_capture(void)
 {
     int fd;
     int i;
-
-    fd = open("/sys/class/gpio/CON9_1/direction", O_RDWR);
-    write(fd, "in", 2);
-    close(fd);
-
-    fd = open("/sys/class/gpio/CON9_1/edge", O_RDWR);
-    write(fd, "rising", 7);
-    close(fd);
     char val;
     struct pollfd pfd;
 
@@ -59,11 +64,10 @@ int edge_capture(void)
     read(fd, &val, 1);
     close(fd);
     printf("run interrupt\n");
+
     //カメラで撮影する
     system("capture image_temp.yuv");
-    char buf[1024];
-    sprintf(buf, "jpg_conv image_temp.yuv image_temp.jpg");
-    system(buf);
+    system("jpg_conv image_temp.yuv image_temp.jpg");
 }
 
 int send_image(void)
@@ -81,35 +85,28 @@ int send_image(void)
     memset(&hints, 0, sizeof(hints));
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_family = PF_UNSPEC;
-    if ((err = getaddrinfo("10.1.69.76", service, &hints, &res0)) != 0)
+    if ((err = getaddrinfo("10.1.69.91", service, &hints, &res0)) != 0)
     {
         printf("error %d : %s\n", err, gai_strerror(err));
-        return 1;
+        return -1;
     }
 
     for (res = res0; res != NULL; res = res->ai_next)
     {
         sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-        if (sock < 0)
-        {
-            continue;
-        }
-
+        if (sock < 0)    continue;
         if (connect(sock, res->ai_addr, res->ai_addrlen) != 0)
         {
             close(sock);
             continue;
         }
-
         break;
     }
-
     freeaddrinfo(res0);
     if (res == NULL)
     {
         /* 有効な接続ができなかった */
-        printf("failed\n");
-        return 1;
+        return -2;
     }
 
     while ((n = read(fd, buf, sizeof(buf))) > 0)
@@ -121,8 +118,6 @@ int send_image(void)
             break;
         }
     }
-
     close(sock);
-
     return 0;
 }

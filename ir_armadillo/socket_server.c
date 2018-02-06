@@ -28,16 +28,15 @@ Twitterの文章をソケットで受け取る
 #define LIGHT 2
 #define ON 0
 #define OFF 1
-#define PIN_PUSHBUTTON 4
-#define PIN_IR 12
+
 #define LOW 0
 #define HIGH 1
-#define DEBOUNCEDELAY 500
+
 #define OUT 0
 #define IN 1
 
 #define BUF_LEN 256
-
+#define PORT 9734
 
 int gpio_set(int s_pin, int mode)
 {
@@ -177,6 +176,8 @@ void sendModulatedData(int modulationTime)
 
 void sendData(int onTime, int offTime)
 {
+    int fd;
+    fd = open("/sys/class/gpio/CON9_11/value", O_WRONLY);
     //on
     sendModulatedData(onTime);
 
@@ -185,16 +186,17 @@ void sendData(int onTime, int offTime)
     usleep(offTime);
 }
 
-int ir_send(int rm, int obj, int stat)
+int pulse_out(int rm, int obj, int stat)
 {
     int *onTime, *offTime;
     int i, j, length = 0;
 
-    char fileName[100] = "ir_data.txt";
+    char fileName[100] = "/home/guest/ir_data/ir_data.txt";
     char buf[BUF_LEN];
-    int loop = 3;
+    int loop = 5;
     FILE *fp;
 
+    //送信IRデータ選択
     if(rm == MYROOM)
     {
         if(obj == TV){
@@ -226,9 +228,10 @@ int ir_send(int rm, int obj, int stat)
         return -1;
     }
 
+    //11番pinをoutputに設定
     gpio_set(11, OUT);
 
-    //solve file Length
+    //ファイルの長さを取得
     while (fgets(buf, BUF_LEN, fp) != NULL)
     {
         length++;
@@ -237,14 +240,14 @@ int ir_send(int rm, int obj, int stat)
     onTime = (int *)calloc(length, sizeof(int));
     offTime = (int *)calloc(length, sizeof(int));
 
-    //read data from file
+    //IRデータの読み取り
     rewind(fp);
     for (i = 0; i < length; i++)
     {
         fscanf(fp, "%d %d", &onTime[i], &offTime[i]);
     }
 
-    //send data
+    //send IR
     for (j = 0; j < 5; j++)
     {
         for (i = 0; i < length; i++)
@@ -259,13 +262,35 @@ int ir_send(int rm, int obj, int stat)
     return 0;
 }
 
+int ir_send(void)
+{
+    int room, obj, status;
+    FILE* fp;
+    char buf[100];
+    if(!(fp = fopen("./socketDM.txt", "r"))) return -1;
+    fread(buf, 1, 16, fp);
+
+    if(strstr(buf, "myroom") != NULL)       room = MYROOM;
+    else if(strstr(buf, "living") != NULL)  room = LIVING;
+
+    if(strstr(buf, "tv____") != NULL)       obj = TV;
+    else if(strstr(buf, "aircon") != NULL)  obj = AIRCON;
+    else if(strstr(buf, "light_") != NULL)  obj = LIGHT;
+
+    if(strstr(buf, "on_") != NULL)       status = ON;
+    else if(strstr(buf, "off") != NULL)  status = OFF;
+
+    fclose(fp);
+    pulse_out(room, obj, status);
+
+    return 0;
+}
 
 int main(void)
 {
     FILE *write_fp;
     char buf[100];
     int num_read;
-    FILE *fp;
     int fd;
 
     int server_sockfd, client_sockfd;
@@ -275,8 +300,8 @@ int main(void)
 
     server_sockfd = socket(AF_INET, SOCK_STREAM, 0);
     server_address.sin_family = AF_INET;
-    server_address.sin_addr.s_addr = INADDR_ANY; //inet_addr("127.0.0.1");
-    server_address.sin_port = 9734;
+    server_address.sin_addr.s_addr = INADDR_ANY;
+    server_address.sin_port = PORT;
 
     server_len = sizeof(server_address);
     bind(server_sockfd, (struct sockaddr *)&server_address, server_len);
@@ -284,40 +309,24 @@ int main(void)
     listen(server_sockfd, 5);
     while (1)
     {
-        int room, obj, status;
         client_sockfd = accept(server_sockfd,
                                (struct sockaddr *)&client_address, &client_len);
 
         if (!(write_fp = fopen("./socketDM.txt", "wb")))
         {
             printf("error1\n");
-            return;
+            return -1;
         }
-        while (num_read = read(client_sockfd, buf, sizeof(buf)))
-            ;
+        while (num_read = read(client_sockfd, buf, sizeof(buf)));
 
         if (fwrite(buf, 16, 1, write_fp) < num_read) //バイト数を指定している
         {
             printf("error2\n");
-            return;
+            return -2;
         }
         fclose(write_fp);
         close(client_sockfd);
 
-        if(!(fp = fopen("./socketDM.txt", "r"))) continue;
-        fread(buf, 1, 16, fp);
-
-        if(strstr(buf, "myroom") != NULL)       room = MYROOM;
-        else if(strstr(buf, "living") != NULL)  room = LIVING;
-
-        if(strstr(buf, "tv____") != NULL)       obj = TV;
-        else if(strstr(buf, "aircon") != NULL)  obj = AIRCON;
-        else if(strstr(buf, "light_") != NULL)  obj = LIGHT;
-
-        if(strstr(buf, "on_") != NULL)       status = ON;
-        else if(strstr(buf, "off") != NULL)  status = OFF;
-
-        fclose(fp);
-        ir_send(room, obj, status);
+        if(ir_send() != 0)  continue;
     }
 }

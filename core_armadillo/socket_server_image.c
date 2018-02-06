@@ -32,7 +32,6 @@ int recv_image(void)
     struct tm *pnow = localtime(&now);
     char time_buf[128];
     char image_direct[256];
-    char command_buf[128];
     char dir_buf[256];
     int num_read;
     int sock0;
@@ -45,7 +44,7 @@ int recv_image(void)
     int n, ret;
     char buf[65536];
 
-    
+
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
@@ -96,10 +95,9 @@ int recv_image(void)
             pnow->tm_year + 1900,
             pnow->tm_mon + 1,
             pnow->tm_mday);
-            
+
     mkdir ("./image", 0755);
-    sprintf(command_buf, "sudo mkdir %s", image_direct);
-    mkdir(command_buf, 0755);
+    mkdir(image_direct, 0755);
     sprintf(dir_buf, "%s/%s.jpg", image_direct, time_buf);
     fd = open(dir_buf, O_WRONLY | O_CREAT, 0600);
     if (fd < 0)

@@ -30,8 +30,8 @@ struct buffer {
 	size_t   	length;
 };
 
-static char *dev_name	= "/dev/video0";	// ビデオデバイス名
-static int  fd	 	= -1;			// ビデオデバイスのハンドラ
+static char *dev_name = "/dev/video0";	// ビデオデバイス名
+static int  fd	 	= -1;				// ビデオデバイスのハンドラ
 struct buffer *buffers	= NULL;			// バッファへの先頭アドレス
 static unsigned int n_buffers = 0;		// バッファ数
 static char output_file[128];			// 出力ファイル
